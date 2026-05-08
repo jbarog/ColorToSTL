@@ -1,5 +1,5 @@
 {
-  "name": "svg-layer-stl",
+  "name": "ColorToSTL",
   "version": "0.2.0",
   "description": "Separate PNG/JPG by color layers and generate STL files for 3D printing",
   "type": "module",
