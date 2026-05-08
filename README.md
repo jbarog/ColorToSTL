@@ -1,22 +1,22 @@
 # SplitSTL
 
-Separa imágenes PNG/JPG en capas de color y genera un archivo STL por capa, listo para impresión 3D o serigrafía.
+Separates PNG/JPG images into color layers and generates an STL file per layer, ready for 3D printing or screen printing.
 
 **Demo:** https://jbarog.github.io/ColorToSTL/
 
 ---
 
-## Qué hace
+## What it does
 
-1. **Sube** una imagen PNG, JPG o WebP.
-2. **Cuantiza** los colores automáticamente (K-means++, de 2 a 8 colores).
-3. **Muestra** una vista previa de cada capa con su color dominante.
-4. **Genera** un STL por capa: placa base + relieve de los píxeles de ese color + asa trasera.
-5. **Marco de registro**: descarga un marco hueco con holgura de 0,5 mm para centrar todas las capas al serigrafiar.
+1. **Upload** a PNG, JPG or WebP image.
+2. **Quantizes** colors automatically (K-means++, from 2 to 8 colors).
+3. **Shows** a preview of each layer with its dominant color.
+4. **Generates** an STL per layer: base plate + relief of the pixels of that color + back handle.
+5. **Registration frame**: download a hollow frame with 0.5 mm clearance to center all layers when screen printing.
 
 ---
 
-## Uso local
+## Local usage
 
 ```bash
 npm install
@@ -28,44 +28,44 @@ npm run dev
 
 ```bash
 npm run build
-# Genera dist/
+# Generates dist/
 ```
 
 ---
 
-## STL generado
+## Generated STL
 
-Cada STL contiene:
+Each STL contains:
 
 ```
-Z < 0                → asa (agarre al voltear la placa)
-0 … plateHeight      → placa base
-plateHeight … total  → relieve (superficie de impresión)
+Z < 0                → handle (grip when flipping the plate)
+0 … plateHeight      → base plate
+plateHeight … total  → relief (printing surface)
 ```
 
-El marco de registro tiene el hueco interior = dimensiones de la placa + 0,25 mm de holgura en cada lado y altura = `plateHeight + reliefHeight`.
+The registration frame has the inner hole = plate dimensions + 0.25 mm clearance on each side and height = `plateHeight + reliefHeight`.
 
 ---
 
 ## Stack
 
-| Paquete | Uso |
+| Package | Use |
 |---|---|
-| [Three.js](https://threejs.org/) | Geometría 3D + exportación STL |
-| [Vite](https://vitejs.dev/) | Bundler y servidor de desarrollo |
+| [Three.js](https://threejs.org/) | 3D geometry + STL export |
+| [Vite](https://vitejs.dev/) | Bundler and development server |
 
 ---
 
-## Estructura
+## Structure
 
 ```
 PngSplitToSTL/
 ├── src/
-│   ├── quantizer.js     # K-means++ sobre píxeles de la imagen
-│   ├── layers.js        # Máscaras por color, canvas preview
-│   └── stlGenerator.js  # STL de capa + marco de registro
-├── demo.js              # Lógica de la interfaz
-├── index.html           # UI (sin framework)
+│   ├── quantizer.js     # K-means++ on image pixels
+│   ├── layers.js        # Masks per color, canvas preview
+│   └── stlGenerator.js  # Layer STL + registration frame
+├── demo.js              # Interface logic
+├── index.html           # UI (no framework)
 └── .github/workflows/
-    └── deploy.yml       # Deploy automático a GitHub Pages
+    └── deploy.yml       # Automatic deploy to GitHub Pages
 ```
