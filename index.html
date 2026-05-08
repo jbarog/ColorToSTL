@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SplitSTL — Separa imágenes en capas 3D</title>
+  <style>
+    /* ── Reset & tokens ─────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    [hidden] { display: none !important; }
+
+    :root {
+      --bg:        #f7f7f8;
+      --surface:   #ffffff;
+      --border:    #e4e4e7;
+      --border2:   #d1d1d6;
+      --text:      #18181b;
+      --muted:     #71717a;
+      --accent:    #6366f1;
+      --accent-dk: #4f46e5;
+      --danger:    #ef4444;
+      --radius:    10px;
+      --shadow:    0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
+      --shadow-lg: 0 4px 16px rgba(0,0,0,.12);
+    }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Shared header ──────────────────────────────────────────────────── */
+    .app-header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      height: 54px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-shrink: 0;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+    .logo {
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .logo-icon { font-size: 1.15rem; }
+    .tagline { color: var(--muted); font-size: 0.82rem; }
+
+    /* ── Error banner (shared, lives above both screens) ────────────────── */
+    #error-banner {
+      background: #fef2f2;
+      border-bottom: 1px solid #fecaca;
+      color: var(--danger);
+      font-size: 0.83rem;
+      padding: 7px 24px;
+      flex-shrink: 0;
+    }
+
+    /* ════════════════════════════════════════════════════════════════════
+       UPLOAD SCREEN
+    ════════════════════════════════════════════════════════════════════ */
+    #screen-upload {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+    #screen-upload .app-header { justify-content: space-between; }
+
+    .upload-hero {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 48px 24px;
+    }
+
+    #drop-zone {
+      border: 2px dashed var(--border2);
+      border-radius: 16px;
+      background: var(--surface);
+      width: 100%;
+      max-width: 480px;
+      padding: 60px 40px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color .15s, background .15s, box-shadow .15s;
+    }
+    #drop-zone:hover, #drop-zone.over {
+      border-color: var(--accent);
+      background: #f5f5ff;
+      box-shadow: 0 0 0 4px rgba(99,102,241,.08);
+    }
+    .drop-icon   { font-size: 2.8rem; display: block; margin-bottom: 14px; }
+    .drop-title  { font-size: 1.05rem; font-weight: 600; margin-bottom: 6px; }
+    .drop-sub    { color: var(--muted); font-size: 0.83rem; margin-bottom: 22px; }
+    .btn-browse  {
+      display: inline-block;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 7px;
+      padding: 9px 22px;
+      font-size: 0.88rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background .12s;
+    }
+    .btn-browse:hover { background: var(--accent-dk); }
+    .drop-formats { color: var(--muted); font-size: 0.76rem; margin-top: 12px; }
+
+    /* ════════════════════════════════════════════════════════════════════
+       EDITOR SCREEN
+    ════════════════════════════════════════════════════════════════════ */
+    #screen-editor {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* Toolbar */
+    .editor-toolbar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 20px;
+      height: 54px;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      flex-shrink: 0;
+      position: sticky;
+      top: 0;
+      z-index: 15;
+    }
+
+    #thumb {
+      height: 34px;
+      width: 34px;
+      object-fit: cover;
+      border-radius: 5px;
+      border: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .color-count-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+    }
+    .color-count-label { font-size: 0.83rem; color: var(--muted); white-space: nowrap; }
+    #color-count {
+      width: 120px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+    #color-count-display { font-weight: 700; min-width: 18px; }
+
+    .btn-ghost {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 6px 14px;
+      font-size: 0.83rem;
+      cursor: pointer;
+      color: var(--muted);
+      transition: background .12s, color .12s;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .btn-ghost:hover { background: var(--bg); color: var(--text); }
+
+    /* Palette bar */
+    #palette-bar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 20px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .palette-chip {
+      height: 30px;
+      min-width: 48px;
+      border-radius: 5px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(0,0,0,.1);
+      padding: 0 8px;
+      transition: transform .1s;
+      cursor: default;
+    }
+    .palette-chip:hover { transform: scale(1.06); }
+    .chip-label {
+      font-size: 0.63rem;
+      font-weight: 600;
+      font-family: monospace;
+      pointer-events: none;
+    }
+
+    /* Layers scroll area */
+    .editor-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      min-height: 0;
+    }
+
+    #layers-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+      gap: 14px;
+    }
+
+    /* Layer card */
+    .layer-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      transition: box-shadow .15s;
+    }
+    .layer-card:hover { box-shadow: var(--shadow-lg); }
+
+    /* Checkerboard to show transparency */
+    .canvas-wrap {
+      width: 100%;
+      background:
+        repeating-conic-gradient(#ddd 0% 25%, #f0f0f0 0% 50%)
+        0 0 / 14px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      min-height: 80px;
+    }
+    .canvas-wrap canvas {
+      display: block;
+      max-width: 100%;
+      max-height: 240px;
+      width: auto;
+      height: auto;
+    }
+
+    .layer-footer {
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      border-top: 1px solid var(--border);
+    }
+    .layer-swatch {
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      border: 1px solid rgba(0,0,0,.1);
+    }
+    .layer-meta {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+    .layer-hex  { font-family: monospace; font-size: 0.78rem; font-weight: 600; }
+    .layer-pct  { font-size: 0.7rem; color: var(--muted); }
+
+    .btn-stl {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 0.76rem;
+      font-weight: 500;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+      transition: background .12s, opacity .12s;
+    }
+    .btn-stl:hover    { background: var(--accent-dk); }
+    .btn-stl:disabled { opacity: .55; cursor: wait; }
+
+    /* Plate settings bar */
+    .plate-settings {
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      flex-shrink: 0;
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+    .plate-settings strong { color: var(--text); font-weight: 600; }
+    .setting-group { display: flex; align-items: center; gap: 5px; }
+    .setting-group input {
+      width: 58px;
+      border: 1px solid var(--border2);
+      border-radius: 5px;
+      padding: 4px 7px;
+      font-size: 0.82rem;
+      text-align: center;
+      outline: none;
+      background: var(--bg);
+      color: var(--text);
+      transition: border-color .12s;
+    }
+    .setting-group input:focus { border-color: var(--accent); }
+    .sep { color: var(--border2); user-select: none; }
+
+    .btn-frame {
+      background: none;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      border-radius: 6px;
+      padding: 6px 14px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background .12s, color .12s;
+      margin-left: auto;
+    }
+    .btn-frame:hover    { background: var(--accent); color: #fff; }
+    .btn-frame:disabled { opacity: .5; cursor: wait; }
+  </style>
+</head>
+<body>
+
+<!-- Error banner (shared across screens) -->
+<div id="error-banner" hidden></div>
+
+<!-- ════════════════════════════════════════════════════════════════════
+     UPLOAD SCREEN
+════════════════════════════════════════════════════════════════════ -->
+<div id="screen-upload">
+  <header class="app-header">
+    <div class="logo"><span class="logo-icon">⬡</span> SplitSTL</div>
+    <span class="tagline">Separa imágenes en capas 3D imprimibles</span>
+  </header>
+
+  <main class="upload-hero">
+    <div id="drop-zone">
+      <span class="drop-icon">🖼</span>
+      <p class="drop-title">Arrastra tu imagen aquí</p>
+      <p class="drop-sub">o haz clic para seleccionar un archivo</p>
+      <button class="btn-browse" type="button">Seleccionar imagen</button>
+      <p class="drop-formats">PNG · JPG · WebP</p>
+    </div>
+    <input type="file" id="file-input" accept="image/*" />
+  </main>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════
+     EDITOR SCREEN
+════════════════════════════════════════════════════════════════════ -->
+<div id="screen-editor" hidden>
+
+  <!-- Toolbar -->
+  <div class="editor-toolbar">
+    <img id="thumb" src="" alt="" />
+    <div class="color-count-wrap">
+      <span class="color-count-label">Colores</span>
+      <input type="range" id="color-count" min="2" max="8" value="4" />
+      <span id="color-count-display">4</span>
+    </div>
+    <button id="btn-new" class="btn-ghost">← Nueva imagen</button>
+  </div>
+
+  <!-- Palette chips -->
+  <div id="palette-bar"></div>
+
+  <!-- Layer cards -->
+  <div class="editor-body">
+    <div id="layers-grid"></div>
+  </div>
+
+  <!-- Plate settings -->
+  <footer class="plate-settings">
+    <strong>Placa</strong>
+    <div class="setting-group">
+      <input type="number" id="opt-width"    value="100" min="1" step="0.5" title="Ancho (mm)" />
+      <span>×</span>
+      <input type="number" id="opt-height"   value="100" min="1" step="0.5" title="Alto (mm)" />
+      <span>mm</span>
+    </div>
+    <span class="sep">|</span>
+    <div class="setting-group">
+      <span>Base</span>
+      <input type="number" id="opt-plate-h"  value="1" min="0.1" step="0.1" title="Grosor base (mm)" />
+      <span>mm</span>
+    </div>
+    <span class="sep">|</span>
+    <div class="setting-group">
+      <span>Relieve</span>
+      <input type="number" id="opt-relief-h" value="1" min="0.1" step="0.1" title="Altura relieve (mm)" />
+      <span>mm</span>
+    </div>
+    <span class="sep">|</span>
+    <button id="btn-frame" class="btn-frame" title="Marco de registro para serigrafía">↓ Marco STL</button>
+  </footer>
+</div>
+
+<script type="module" src="/demo.js"></script>
+</body>
+</html>
