@@ -71,7 +71,7 @@ async function handleFile(file) {
     showScreen('editor');
     reprocess();
   } catch (err) {
-    showError('No se pudo cargar la imagen: ' + err.message);
+    showError('Image error: ' + err.message);
   }
 }
 
@@ -140,7 +140,7 @@ function renderLayers() {
 
     const btn = document.createElement('button');
     btn.className = 'btn-stl';
-    btn.textContent = 'Descargar STL';
+    btn.textContent = 'Download STL';
     btn.addEventListener('click', () => downloadSTL(btn, i, hex));
 
     footer.append(swatch, meta, btn);
@@ -152,7 +152,7 @@ function renderLayers() {
 // ── STL download ──────────────────────────────────────────────────────────────
 function downloadSTL(btn, colorIndex, hex) {
   const original = btn.textContent;
-  btn.textContent = 'Generando…';
+  btn.textContent = 'Generating…';
   btn.disabled = true;
 
   // Yield to browser so button state updates before heavy work
@@ -168,9 +168,9 @@ function downloadSTL(btn, colorIndex, hex) {
         quantResult.assignment, colorIndex,
         imgState.width, imgState.height, opts
       );
-      triggerDownload(stl, `capa_${colorIndex + 1}_${hex.slice(1)}.stl`);
+      triggerDownload(stl, `layer_${colorIndex + 1}_${hex.slice(1)}.stl`);
     } catch (err) {
-      showError('Error al generar STL: ' + err.message);
+      showError('Error generating STL: ' + err.message);
       console.error(err);
     } finally {
       btn.textContent = original;
@@ -192,7 +192,7 @@ function triggerDownload(data, filename) {
 // ── Frame STL download ────────────────────────────────────────────────────────
 btnFrame.addEventListener('click', () => {
   const original = btnFrame.textContent;
-  btnFrame.textContent = 'Generando…';
+  btnFrame.textContent = 'Generating…';
   btnFrame.disabled = true;
 
   setTimeout(() => {
@@ -204,9 +204,9 @@ btnFrame.addEventListener('click', () => {
         reliefHeight: parseFloat(optReliefH.value) || 1,
       };
       const stl = generateFrameSTL(opts);
-      triggerDownload(stl, `marco_${opts.width}x${opts.height}mm.stl`);
+      triggerDownload(stl, `frame_${opts.width}x${opts.height}mm.stl`);
     } catch (err) {
-      showError('Error al generar marco: ' + err.message);
+      showError('Error generating frame: ' + err.message);
     } finally {
       btnFrame.textContent = original;
       btnFrame.disabled = false;

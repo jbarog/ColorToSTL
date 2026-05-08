@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SplitSTL — Separa imágenes en capas 3D</title>
+  <title>SplitSTL — Split images into 3D layers</title>
   <style>
     /* ── Reset & tokens ─────────────────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -79,6 +79,10 @@
     }
     #screen-upload .app-header { justify-content: space-between; }
 
+    #file-input {
+      display: none;
+    }
+    
     .upload-hero {
       flex: 1;
       display: flex;
@@ -360,15 +364,15 @@
 <div id="screen-upload">
   <header class="app-header">
     <div class="logo"><span class="logo-icon">⬡</span> SplitSTL</div>
-    <span class="tagline">Separa imágenes en capas 3D imprimibles</span>
+    <span class="tagline">Split images into printable 3D color layers</span>
   </header>
 
   <main class="upload-hero">
     <div id="drop-zone">
       <span class="drop-icon">🖼</span>
-      <p class="drop-title">Arrastra tu imagen aquí</p>
-      <p class="drop-sub">o haz clic para seleccionar un archivo</p>
-      <button class="btn-browse" type="button">Seleccionar imagen</button>
+      <p class="drop-title">Drag your image here</p>
+      <p class="drop-sub">or click to select a file</p>
+      <button class="btn-browse" type="button">Choose image</button>
       <p class="drop-formats">PNG · JPG · WebP</p>
     </div>
     <input type="file" id="file-input" accept="image/*" />
@@ -384,11 +388,11 @@
   <div class="editor-toolbar">
     <img id="thumb" src="" alt="" />
     <div class="color-count-wrap">
-      <span class="color-count-label">Colores</span>
+      <span class="color-count-label">Colors</span>
       <input type="range" id="color-count" min="2" max="8" value="4" />
       <span id="color-count-display">4</span>
     </div>
-    <button id="btn-new" class="btn-ghost">← Nueva imagen</button>
+    <button id="btn-new" class="btn-ghost">← New image</button>
   </div>
 
   <!-- Palette chips -->
@@ -401,27 +405,27 @@
 
   <!-- Plate settings -->
   <footer class="plate-settings">
-    <strong>Placa</strong>
+    <strong>Plate</strong>
     <div class="setting-group">
-      <input type="number" id="opt-width"    value="100" min="1" step="0.5" title="Ancho (mm)" />
+      <input type="number" id="opt-width"    value="100" min="1" step="0.5" title="Width (mm)" />
       <span>×</span>
-      <input type="number" id="opt-height"   value="100" min="1" step="0.5" title="Alto (mm)" />
+      <input type="number" id="opt-height"   value="100" min="1" step="0.5" title="Height (mm)" />
       <span>mm</span>
     </div>
     <span class="sep">|</span>
     <div class="setting-group">
       <span>Base</span>
-      <input type="number" id="opt-plate-h"  value="1" min="0.1" step="0.1" title="Grosor base (mm)" />
+      <input type="number" id="opt-plate-h"  value="1" min="0.1" step="0.1" title="Base thickness (mm)" />
       <span>mm</span>
     </div>
     <span class="sep">|</span>
     <div class="setting-group">
-      <span>Relieve</span>
-      <input type="number" id="opt-relief-h" value="1" min="0.1" step="0.1" title="Altura relieve (mm)" />
+      <span>Relief</span>
+      <input type="number" id="opt-relief-h" value="1" min="0.1" step="0.1" title="Relief height (mm)" />
       <span>mm</span>
     </div>
     <span class="sep">|</span>
-    <button id="btn-frame" class="btn-frame" title="Marco de registro para serigrafía">↓ Marco STL</button>
+    <button id="btn-frame" class="btn-frame" title="Registration frame for screen printing">↓ STL frame</button>
   </footer>
 </div>
 

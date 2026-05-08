@@ -116,7 +116,7 @@ export function generateLayerSTL(assignment, colorIndex, srcW, srcH,
 export function generateFrameSTL({ width, height, plateHeight, reliefHeight }) {
   const clearance  = 0.25;   // mm each side → 0.5 mm total per axis
   const wallThick  = 2;      // mm
-  const totalH     = plateHeight + reliefHeight;
+  const totalH     = 2 * plateHeight + reliefHeight;
 
   // Outer dimensions
   const ow = width  + 2 * clearance + 2 * wallThick;
