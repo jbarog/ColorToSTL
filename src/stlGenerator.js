@@ -4,14 +4,15 @@ import { STLExporter } from 'three/addons/exporters/STLExporter.js';
 
 const exporter = new STLExporter();
 
+const HANDLE_W = 20;         // mm wide (X)
+const HANDLE_H = 20;         // mm deep (Y)
+const HANDLE_D = 15;         // mm protrusion out the back (Z)
+const MIN_FRAME_HEIGHT = 6;  // mm, to ensure the handle is fully enclosed even for very thin plates
+
 // ── Handle (asa) ──────────────────────────────────────────────────────────────
 // Rectangular block attached to the back face (Z=0) of the plate, centred in
 // X and Y, protruding in the −Z direction.  When the user flips the plate to
 // print, the handle ends up on top as a natural grip.
-const HANDLE_W = 30;   // mm wide (X)
-const HANDLE_H = 20;   // mm deep (Y)
-const HANDLE_D = 15;   // mm protrusion out the back (Z)
-
 function handleGeo(width, height) {
   const hw = Math.min(HANDLE_W, width  * 0.6);
   const hh = Math.min(HANDLE_H, height * 0.4);
@@ -161,7 +162,7 @@ export function generateLayerSTL(assignment, colorIndex, srcW, srcH,
 export function generateFrameSTL({ width, height, plateHeight, reliefHeight }) {
   const clearance  = 0.25;   // mm each side → 0.5 mm total per axis
   const wallThick  = 2;      // mm
-  const totalH     = 2 * plateHeight + reliefHeight;
+  const totalH     = Math.max(MIN_FRAME_HEIGHT, 2 * plateHeight + reliefHeight);
 
   // Outer dimensions
   const ow = width  + 2 * clearance + 2 * wallThick;
