@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { STLExporter } from 'three/addons/exporters/STLExporter.js';
 
 const exporter = new STLExporter();
@@ -21,8 +21,17 @@ function handleGeo(width, height) {
 }
 
 // ── Mask downsampling ─────────────────────────────────────────────────────────
-function downsampleMask(assignment, colorIndex, srcW, srcH, maxRes = 300) {
-  const scale = Math.min(1, maxRes / Math.max(srcW, srcH));
+// maxRes = 0 (or falsy) keeps source resolution.
+function downsampleMask(assignment, colorIndex, srcW, srcH, maxRes) {
+  if (!maxRes || Math.max(srcW, srcH) <= maxRes) {
+    const mask = new Uint8Array(srcW * srcH);
+    for (let i = 0; i < mask.length; i++) {
+      if (assignment[i] === colorIndex) mask[i] = 1;
+    }
+    return { mask, w: srcW, h: srcH };
+  }
+
+  const scale = maxRes / Math.max(srcW, srcH);
   const dstW = Math.max(1, Math.round(srcW * scale));
   const dstH = Math.max(1, Math.round(srcH * scale));
   const mask = new Uint8Array(dstW * dstH);
@@ -44,9 +53,51 @@ function downsampleMask(assignment, colorIndex, srcW, srcH, maxRes = 300) {
   return { mask, w: dstW, h: dstH };
 }
 
+// ── Greedy 2D rectangle decomposition ─────────────────────────────────────────
+// Returns an array of {x, y, w, h} covering every "on" pixel exactly once.
+// Equivalent topology to the per-pixel mesh, but with far fewer rectangles
+// for solid color regions — keeps triangle count manageable at high res.
+function greedyRects(mask, w, h) {
+  const visited = new Uint8Array(w * h);
+  const rects = [];
+
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const idx = y * w + x;
+      if (!mask[idx] || visited[idx]) continue;
+
+      let x1 = x;
+      while (x1 < w && mask[y * w + x1] && !visited[y * w + x1]) x1++;
+      const rw = x1 - x;
+
+      let y1 = y + 1;
+      while (y1 < h) {
+        let ok = true;
+        const rowStart = y1 * w;
+        for (let xi = x; xi < x1; xi++) {
+          if (!mask[rowStart + xi] || visited[rowStart + xi]) { ok = false; break; }
+        }
+        if (!ok) break;
+        y1++;
+      }
+      const rh = y1 - y;
+
+      for (let yi = y; yi < y1; yi++) {
+        const rowStart = yi * w;
+        for (let xi = x; xi < x1; xi++) visited[rowStart + xi] = 1;
+      }
+      rects.push({ x, y, w: rw, h: rh });
+    }
+  }
+  return rects;
+}
+
 function toSTL(geos) {
   const scene = new THREE.Scene();
-  scene.add(new THREE.Mesh(mergeGeometries(geos, false)));
+  let merged = mergeGeometries(geos, false);
+  merged = mergeVertices(merged);
+  merged.computeVertexNormals();
+  scene.add(new THREE.Mesh(merged));
   return exporter.parse(scene, { binary: true });
 }
 
@@ -60,9 +111,9 @@ function toSTL(geos) {
  *   plateHeight … total → relief (printing surface, faces down when using)
  */
 export function generateLayerSTL(assignment, colorIndex, srcW, srcH,
-  { width, height, plateHeight, reliefHeight }) {
+  { width, height, plateHeight, reliefHeight, maxRes = 600 }) {
 
-  const { mask, w, h } = downsampleMask(assignment, colorIndex, srcW, srcH);
+  const { mask, w, h } = downsampleMask(assignment, colorIndex, srcW, srcH, maxRes);
 
   // Uniform scale (contain): keep image aspect ratio, centre inside the plate.
   const pxSize = Math.min(width / w, height / h);
@@ -76,24 +127,18 @@ export function generateLayerSTL(assignment, colorIndex, srcW, srcH,
   plate.translate(width / 2, height / 2, plateHeight / 2);
   geos.push(plate);
 
-  // Raised prisms (run-length per row)
-  for (let row = 0; row < h; row++) {
-    let start = -1;
-    for (let col = 0; col <= w; col++) {
-      const on = col < w && mask[row * w + col] === 1;
-      if (on && start === -1) { start = col; }
-      else if (!on && start !== -1) {
-        const runW = (col - start) * pxSize;
-        const geo = new THREE.BoxGeometry(runW, pxSize, reliefHeight);
-        geo.translate(
-          offX + start * pxSize + runW / 2,
-          offY + (h - 1 - row) * pxSize + pxSize / 2,
-          plateHeight + reliefHeight / 2,
-        );
-        geos.push(geo);
-        start = -1;
-      }
-    }
+  // Raised prisms — one box per greedy rectangle.
+  const rects = greedyRects(mask, w, h);
+  for (const r of rects) {
+    const rw = r.w * pxSize;
+    const rh = r.h * pxSize;
+    const geo = new THREE.BoxGeometry(rw, rh, reliefHeight);
+    geo.translate(
+      offX + r.x * pxSize + rw / 2,
+      offY + (h - r.y - r.h) * pxSize + rh / 2,
+      plateHeight + reliefHeight / 2,
+    );
+    geos.push(geo);
   }
 
   // Back handle

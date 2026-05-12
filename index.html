@@ -334,6 +334,18 @@
       transition: border-color .12s;
     }
     .setting-group input:focus { border-color: var(--accent); }
+    .setting-group select {
+      border: 1px solid var(--border2);
+      border-radius: 5px;
+      padding: 4px 7px;
+      font-size: 0.82rem;
+      outline: none;
+      background: var(--bg);
+      color: var(--text);
+      cursor: pointer;
+      transition: border-color .12s;
+    }
+    .setting-group select:focus { border-color: var(--accent); }
     .sep { color: var(--border2); user-select: none; }
 
     .btn-frame {
@@ -423,6 +435,16 @@
       <span>Relief</span>
       <input type="number" id="opt-relief-h" value="1" min="0.1" step="0.1" title="Relief height (mm)" />
       <span>mm</span>
+    </div>
+    <span class="sep">|</span>
+    <div class="setting-group">
+      <span>Quality</span>
+      <select id="opt-quality" title="Relief resolution (higher = sharper edges, larger STL)">
+        <option value="300">Draft</option>
+        <option value="600" selected>Medium</option>
+        <option value="1000">High</option>
+        <option value="0">Max (source)</option>
+      </select>
     </div>
     <span class="sep">|</span>
     <button id="btn-frame" class="btn-frame" title="Registration frame for screen printing">↓ STL frame</button>
