@@ -33,6 +33,7 @@ const optHeight   = document.getElementById('opt-height');
 const optPlateH   = document.getElementById('opt-plate-h');
 const optReliefH  = document.getElementById('opt-relief-h');
 const optQuality  = document.getElementById('opt-quality');
+const optInvert   = document.getElementById('opt-invert');
 const btnFrame    = document.getElementById('btn-frame');
 
 // ── Upload & drop ─────────────────────────────────────────────────────────────
@@ -233,6 +234,7 @@ function downloadSTL(btn, colorIndex, hex) {
         plateHeight:  parseFloat(optPlateH.value)  || 1,
         reliefHeight: parseFloat(optReliefH.value) || 1,
         maxRes:       parseInt(optQuality.value, 10),
+        invert:       optInvert.checked,
       };
       const stl = generateLayerSTL(
         quantResult.assignment, colorIndex,

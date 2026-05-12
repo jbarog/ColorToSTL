@@ -501,7 +501,7 @@
     <img id="thumb" src="" alt="" />
     <div class="color-count-wrap">
       <span class="color-count-label">Colors</span>
-      <input type="range" id="color-count" min="2" max="8" value="4" />
+      <input type="range" id="color-count" min="2" max="12" value="4" />
       <span id="color-count-display">4</span>
     </div>
     <button id="btn-new" class="btn-ghost">← New image</button>
@@ -566,6 +566,11 @@
         <option value="0">Max (source)</option>
       </select>
     </div>
+    <span class="sep">|</span>
+    <label class="setting-group" style="cursor:pointer;gap:6px;">
+      <input type="checkbox" id="opt-invert" checked style="accent-color:var(--accent);cursor:pointer;" />
+      <span>Invert</span>
+    </label>
     <span class="sep">|</span>
     <button id="btn-frame" class="btn-frame" title="Registration frame for screen printing">↓ STL frame</button>
   </footer>

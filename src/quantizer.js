@@ -1,3 +1,5 @@
+import { MAX_IMAGE_DIM } from "./config";
+
 /**
  * K-means++ color quantization.
  * All computation runs synchronously in the browser on ImageData.
@@ -115,10 +117,9 @@ export async function loadImageData(file) {
     i.src = url;
   });
 
-  const MAX = 1200;
   let w = img.naturalWidth, h = img.naturalHeight;
-  if (w > MAX || h > MAX) {
-    const s = MAX / Math.max(w, h);
+  if (w > MAX_IMAGE_DIM || h > MAX_IMAGE_DIM) {
+    const s = MAX_IMAGE_DIM / Math.max(w, h);
     w = Math.round(w * s);
     h = Math.round(h * s);
   }

@@ -1,13 +1,12 @@
 import * as THREE from 'three';
 import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { STLExporter } from 'three/addons/exporters/STLExporter.js';
+import {
+  HANDLE_W, HANDLE_H, HANDLE_D,
+  MIN_FRAME_HEIGHT, FRAME_CLEARANCE, FRAME_WALL_THICK,
+} from './config.js';
 
 const exporter = new STLExporter();
-
-const HANDLE_W = 20;         // mm wide (X)
-const HANDLE_H = 20;         // mm deep (Y)
-const HANDLE_D = 15;         // mm protrusion out the back (Z)
-const MIN_FRAME_HEIGHT = 6;  // mm, to ensure the handle is fully enclosed even for very thin plates
 
 // ── Handle (asa) ──────────────────────────────────────────────────────────────
 // Rectangular block attached to the back face (Z=0) of the plate, centred in
@@ -112,7 +111,7 @@ function toSTL(geos) {
  *   plateHeight … total → relief (printing surface, faces down when using)
  */
 export function generateLayerSTL(assignment, colorIndex, srcW, srcH,
-  { width, height, plateHeight, reliefHeight, maxRes = 600 }) {
+  { width, height, plateHeight, reliefHeight, maxRes = 600, invert = false }) {
 
   const { mask, w, h } = downsampleMask(assignment, colorIndex, srcW, srcH, maxRes);
 
@@ -134,8 +133,11 @@ export function generateLayerSTL(assignment, colorIndex, srcW, srcH,
     const rw = r.w * pxSize;
     const rh = r.h * pxSize;
     const geo = new THREE.BoxGeometry(rw, rh, reliefHeight);
+    const rx = invert
+      ? offX + (w - r.x - r.w) * pxSize + rw / 2
+      : offX + r.x * pxSize + rw / 2;
     geo.translate(
-      offX + r.x * pxSize + rw / 2,
+      rx,
       offY + (h - r.y - r.h) * pxSize + rh / 2,
       plateHeight + reliefHeight / 2,
     );
@@ -160,14 +162,12 @@ export function generateLayerSTL(assignment, colorIndex, srcW, srcH,
  * all layers will be perfectly centred.
  */
 export function generateFrameSTL({ width, height, plateHeight, reliefHeight }) {
-  const clearance  = 0.25;   // mm each side → 0.5 mm total per axis
-  const wallThick  = 2;      // mm
   const totalH     = Math.max(MIN_FRAME_HEIGHT, 2 * plateHeight + reliefHeight);
 
   // Outer dimensions
-  const ow = width  + 2 * clearance + 2 * wallThick;
-  const oh = height + 2 * clearance + 2 * wallThick;
-  const tw = wallThick;
+  const ow = width  + 2 * FRAME_CLEARANCE + 2 * FRAME_WALL_THICK;
+  const oh = height + 2 * FRAME_CLEARANCE + 2 * FRAME_WALL_THICK;
+  const tw = FRAME_WALL_THICK;
 
   const geos = [];
 
