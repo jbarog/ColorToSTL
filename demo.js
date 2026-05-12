@@ -1,10 +1,11 @@
 import { loadImageData, quantize } from './src/quantizer.js';
-import { centroidToHex, isLight, pixelCounts, renderLayerCanvas } from './src/layers.js';
+import { centroidToHex, isLight, pixelCounts, renderLayerCanvas, renderCompositeCanvas } from './src/layers.js';
 import { generateLayerSTL, generateFrameSTL } from './src/stlGenerator.js';
 
 // ── State ─────────────────────────────────────────────────────────────────────
 let imgState = null;     // { imageData, width, height, objectURL }
 let quantResult = null;  // { centroids, assignment }
+let selectedLayers = new Set();
 
 // ── DOM refs ──────────────────────────────────────────────────────────────────
 const screenUpload = document.getElementById('screen-upload');
@@ -18,6 +19,13 @@ const paletteBar   = document.getElementById('palette-bar');
 const layersGrid   = document.getElementById('layers-grid');
 const btnNew       = document.getElementById('btn-new');
 const errorBanner  = document.getElementById('error-banner');
+
+// Composite panel
+const compositePanelEl = document.getElementById('composite-panel');
+const compositeCanvas  = document.getElementById('composite-canvas');
+const compositeCount   = document.getElementById('composite-count');
+const btnCompositePng  = document.getElementById('btn-composite-png');
+const btnDeselectAll   = document.getElementById('btn-deselect-all');
 
 // Plate options
 const optWidth    = document.getElementById('opt-width');
@@ -106,26 +114,33 @@ function renderPalette() {
 // ── Layer cards ───────────────────────────────────────────────────────────────
 function renderLayers() {
   layersGrid.innerHTML = '';
+  selectedLayers.clear();
+  compositePanelEl.hidden = true;
+
   const { centroids, assignment } = quantResult;
   const counts = pixelCounts(assignment, centroids.length);
   const totalPx = counts.reduce((s, c) => s + c, 0);
 
   centroids.forEach((centroid, i) => {
-    if (!counts[i]) return; // skip empty clusters
+    if (!counts[i]) return;
 
     const hex = centroidToHex(centroid);
     const pct = Math.round((counts[i] / totalPx) * 100);
-    const light = isLight(centroid);
 
     const card = document.createElement('div');
     card.className = 'layer-card';
+
+    // Selection indicator
+    const check = document.createElement('div');
+    check.className = 'select-check';
+    check.textContent = '✓';
 
     // Canvas preview
     const canvasWrap = document.createElement('div');
     canvasWrap.className = 'canvas-wrap';
     const canvas = document.createElement('canvas');
     renderLayerCanvas(canvas, assignment, i, centroid, imgState.width, imgState.height);
-    canvasWrap.appendChild(canvas);
+    canvasWrap.append(check, canvas);
 
     // Footer inside card
     const footer = document.createElement('div');
@@ -142,13 +157,66 @@ function renderLayers() {
     const btn = document.createElement('button');
     btn.className = 'btn-stl';
     btn.textContent = 'Download STL';
-    btn.addEventListener('click', () => downloadSTL(btn, i, hex));
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      downloadSTL(btn, i, hex);
+    });
 
     footer.append(swatch, meta, btn);
     card.append(canvasWrap, footer);
+
+    card.addEventListener('click', () => toggleLayerSelection(card, i));
+
     layersGrid.appendChild(card);
   });
 }
+
+function toggleLayerSelection(card, index) {
+  if (selectedLayers.has(index)) {
+    selectedLayers.delete(index);
+    card.classList.remove('selected');
+  } else {
+    selectedLayers.add(index);
+    card.classList.add('selected');
+  }
+  updateComposite();
+}
+
+function updateComposite() {
+  if (selectedLayers.size === 0) {
+    compositePanelEl.hidden = true;
+    return;
+  }
+  compositePanelEl.hidden = false;
+  const n = selectedLayers.size;
+  compositeCount.textContent = `${n} layer${n > 1 ? 's' : ''} selected`;
+  renderCompositeCanvas(
+    compositeCanvas,
+    quantResult.assignment,
+    [...selectedLayers],
+    quantResult.centroids,
+    imgState.width,
+    imgState.height
+  );
+}
+
+// ── Composite panel actions ───────────────────────────────────────────────────
+btnCompositePng.addEventListener('click', () => {
+  compositeCanvas.toBlob(blob => {
+    const a = Object.assign(document.createElement('a'), {
+      href: URL.createObjectURL(blob),
+      download: 'composite.png',
+    });
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  });
+});
+
+btnDeselectAll.addEventListener('click', () => {
+  selectedLayers.clear();
+  layersGrid.querySelectorAll('.layer-card.selected').forEach(c => c.classList.remove('selected'));
+  compositePanelEl.hidden = true;
+});
 
 // ── STL download ──────────────────────────────────────────────────────────────
 function downloadSTL(btn, colorIndex, hex) {

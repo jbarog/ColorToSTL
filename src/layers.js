@@ -17,6 +17,30 @@ export function pixelCounts(assignment, k) {
 }
 
 /**
+ * Render a composite of multiple layers onto a canvas element.
+ * Each pixel belonging to any of the given colorIndices is drawn in its centroid color.
+ */
+export function renderCompositeCanvas(canvas, assignment, colorIndices, centroids, width, height) {
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  const img = ctx.createImageData(width, height);
+  const indexSet = new Set(colorIndices);
+
+  for (let i = 0; i < width * height; i++) {
+    const ci = assignment[i];
+    if (ci >= 0 && indexSet.has(ci)) {
+      const [r, g, b] = centroids[ci];
+      img.data[i * 4]     = r;
+      img.data[i * 4 + 1] = g;
+      img.data[i * 4 + 2] = b;
+      img.data[i * 4 + 3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+}
+
+/**
  * Render a layer mask onto a canvas element.
  * Active pixels → centroid color; inactive pixels → transparent.
  *

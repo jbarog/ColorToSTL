@@ -226,9 +226,14 @@
       overflow-y: auto;
       padding: 20px;
       min-height: 0;
+      display: flex;
+      gap: 18px;
+      align-items: flex-start;
     }
 
     #layers-grid {
+      flex: 1;
+      min-width: 0;
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
       gap: 14px;
@@ -363,6 +368,101 @@
     }
     .btn-frame:hover    { background: var(--accent); color: #fff; }
     .btn-frame:disabled { opacity: .5; cursor: wait; }
+
+    /* ── Layer selection ────────────────────────────────────────────────── */
+    .layer-card {
+      cursor: pointer;
+      position: relative;
+    }
+    .layer-card.selected {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px var(--accent), var(--shadow-lg);
+    }
+    .select-check {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      z-index: 2;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.7rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transform: scale(0.6);
+      transition: opacity .15s, transform .15s;
+      pointer-events: none;
+    }
+    .layer-card.selected .select-check {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    /* ── Composite sidebar ──────────────────────────────────────────────── */
+    #composite-panel {
+      width: 260px;
+      flex-shrink: 0;
+      position: sticky;
+      top: 0;
+      background: var(--surface);
+      border: 2px solid var(--accent);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .composite-header {
+      padding: 12px 14px 10px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .composite-title-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .composite-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      flex-shrink: 0;
+    }
+    .composite-title {
+      font-weight: 600;
+      font-size: 0.88rem;
+      flex: 1;
+    }
+    .composite-count {
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+    .composite-actions {
+      display: flex;
+      gap: 6px;
+      padding: 10px 14px;
+      border-top: 1px solid var(--border);
+    }
+    .composite-actions .btn-ghost {
+      flex: 1;
+      text-align: center;
+      font-size: 0.78rem;
+      padding: 6px 8px;
+    }
+    #composite-panel .canvas-wrap {
+      flex: 1;
+    }
+    #composite-panel .canvas-wrap canvas {
+      max-height: 400px;
+    }
   </style>
 </head>
 <body>
@@ -412,7 +512,27 @@
 
   <!-- Layer cards -->
   <div class="editor-body">
+
     <div id="layers-grid"></div>
+
+    <!-- Composite sidebar (visible when ≥1 layer selected) -->
+    <div id="composite-panel" hidden>
+      <div class="composite-header">
+        <div class="composite-title-row">
+          <span class="composite-dot"></span>
+          <span class="composite-title">Composite</span>
+        </div>
+        <span id="composite-count" class="composite-count"></span>
+      </div>
+      <div class="canvas-wrap">
+        <canvas id="composite-canvas"></canvas>
+      </div>
+      <div class="composite-actions">
+        <button id="btn-composite-png" class="btn-ghost">↓ PNG</button>
+        <button id="btn-deselect-all" class="btn-ghost">Clear</button>
+      </div>
+    </div>
+
   </div>
 
   <!-- Plate settings -->
