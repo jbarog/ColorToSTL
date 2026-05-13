@@ -3,7 +3,7 @@ import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometr
 import { STLExporter } from 'three/addons/exporters/STLExporter.js';
 import {
   HANDLE_W, HANDLE_H, HANDLE_D,
-  MIN_FRAME_HEIGHT, FRAME_CLEARANCE, FRAME_WALL_THICK,
+  MIN_FRAME_HEIGHT, FRAME_CLEARANCE, FRAME_WALL_THICK, FRAME_GRIP_R,
 } from './config.js';
 
 const exporter = new STLExporter();
@@ -94,7 +94,7 @@ function greedyRects(mask, w, h) {
 
 function toSTL(geos) {
   const scene = new THREE.Scene();
-  let merged = mergeGeometries(geos, false);
+  let merged = mergeGeometries(geos.map(g => g.toNonIndexed()), false);
   merged = mergeVertices(merged);
   merged.computeVertexNormals();
   scene.add(new THREE.Mesh(merged));
@@ -150,6 +150,29 @@ export function generateLayerSTL(assignment, colorIndex, srcW, srcH,
   return toSTL(geos);
 }
 
+// ── Corner grip cylinders ─────────────────────────────────────────────────────
+// Full circle centred at the outer corner, but with the interior-facing arc
+// segment replaced by two straight lines along the inner wall faces (x=tw and
+// y=tw in local coords).  Result: the grip fills the outer corner completely
+// without reducing the inner opening.
+// sx, sy ∈ {+1, -1}: sign of the inward direction for each corner.
+function cornerGripGeo(cx, cy, sx, sy, r, tw, h, z0) {
+  const q  = Math.sqrt(r * r - tw * tw);
+  const a2 = Math.atan2(sy * tw, sx * q);
+  const a1 = Math.atan2(sy * q,  sx * tw);
+  const cw = sx * sy > 0; // ensures the arc goes the long way (exterior side)
+
+  const shape = new THREE.Shape();
+  shape.moveTo(sx * q, sy * tw);
+  shape.absarc(0, 0, r, a2, a1, cw);
+  shape.lineTo(sx * tw, sy * tw);
+  shape.closePath();
+
+  const geo = new THREE.ExtrudeGeometry(shape, { depth: h, bevelEnabled: false });
+  geo.translate(cx, cy, z0);
+  return geo;
+}
+
 // ── Frame STL ─────────────────────────────────────────────────────────────────
 /**
  * Hollow rectangular frame for screen-printing registration.
@@ -191,6 +214,15 @@ export function generateFrameSTL({ width, height, plateHeight, reliefHeight }) {
   const top = new THREE.BoxGeometry(innerSpan, tw, totalH);
   top.translate(ow / 2, oh - tw / 2, totalH / 2);
   geos.push(top);
+
+  // Corner grips — centred on each outer corner, arc cut along inner wall faces
+  const gr = FRAME_GRIP_R;
+  const gh = totalH * 0.65;
+  const gz = totalH - gh;
+  geos.push(cornerGripGeo(0,  0,   1,  1, gr, tw, gh, gz));
+  geos.push(cornerGripGeo(ow, 0,  -1,  1, gr, tw, gh, gz));
+  geos.push(cornerGripGeo(0,  oh,  1, -1, gr, tw, gh, gz));
+  geos.push(cornerGripGeo(ow, oh, -1, -1, gr, tw, gh, gz));
 
   return toSTL(geos);
 }
