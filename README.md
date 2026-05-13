@@ -1,4 +1,4 @@
-# SplitSTL
+# ColorToSTL
 
 Separates PNG/JPG images into color layers and generates an STL file per layer, ready for 3D printing or screen printing.
 
@@ -59,7 +59,7 @@ The registration frame has the inner hole = plate dimensions + 0.25 mm clearance
 ## Structure
 
 ```
-PngSplitToSTL/
+ColorToSTL/
 ├── src/
 │   ├── quantizer.js     # K-means++ on image pixels
 │   ├── layers.js        # Masks per color, canvas preview

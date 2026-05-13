@@ -3,7 +3,52 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SplitSTL — Split images into 3D layers</title>
+  <title>ColorToSTL — Split Images into Printable 3D Color Layers</title>
+  <meta name="description" content="Free browser tool to split any image into separate color layers and export each as an STL file ready for multi-color 3D printing. No installation required." />
+  <meta name="keywords" content="STL generator, multi-color 3D printing, image to STL, color layers, 3D print, FDM, lithophane, slicer" />
+  <meta name="author" content="ColorToSTL" />
+  <link rel="canonical" href="https://jbarog.github.io/ColorToSTL/" />
+
+  <!-- Open Graph -->
+  <meta property="og:type"        content="website" />
+  <meta property="og:url"         content="https://jbarog.github.io/ColorToSTL/" />
+  <meta property="og:title"       content="ColorToSTL — Split Images into Printable 3D Color Layers" />
+  <meta property="og:description" content="Free browser tool to split any image into separate color layers and export each as an STL file ready for multi-color 3D printing. No installation required." />
+  <meta property="og:site_name"   content="ColorToSTL" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card"        content="summary" />
+  <meta name="twitter:title"       content="ColorToSTL — Split Images into Printable 3D Color Layers" />
+  <meta name="twitter:description" content="Free browser tool to split any image into separate color layers and export each as an STL file ready for multi-color 3D printing. No installation required." />
+
+  <!-- JSON-LD -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "ColorToSTL",
+    "headline": "Split Images into Printable 3D Color Layers",
+    "author": {
+      "@type": "Person",
+      "name": "Jose Baro"
+    },
+    "url": "https://jbarog.github.io/ColorToSTL/",
+    "description": "Free browser tool that quantizes any image by color and exports each color layer as an STL file. Perfect for multi-color 3D printing, creating custom stamps and seals, and screen printing registration.",
+    "applicationCategory": "DesignApplication",
+    "operatingSystem": "Any",
+    "featureList": [
+      "Image color quantization (2–12 colors)",
+      "Per-layer STL export",
+      "Create custom stamps and seals from any image",
+      "Adjustable plate size, base thickness and relief height",
+      "Draft / Medium / High / Max quality modes",
+      "Composite layer preview",
+      "Registration frame STL for screen printing",
+      "Runs entirely in the browser — no upload, no server"
+    ],
+    "softwareVersion": "1.0"
+  }
+  </script>
   <style>
     /* ── Reset & tokens ─────────────────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -475,7 +520,7 @@
 ════════════════════════════════════════════════════════════════════ -->
 <div id="screen-upload">
   <header class="app-header">
-    <div class="logo"><span class="logo-icon">⬡</span> SplitSTL</div>
+    <div class="logo"><span class="logo-icon">⬡</span> ColorToSTL</div>
     <span class="tagline">Split images into printable 3D color layers</span>
   </header>
 
